@@ -4,14 +4,21 @@ import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
+import { PaginatioDto } from 'src/common/dtos/pagination.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PokemonService {
 
+  private defaultLimit: number;
+
   constructor(
     @InjectModel(Pokemon.name)
     private readonly pokemonModel: Model<Pokemon>,
-  ) { }
+    private readonly configSevice: ConfigService
+  ) {
+    this.defaultLimit = configSevice.get<number>('defaultLimit');
+  }
 
 
   async create(createPokemonDto: CreatePokemonDto) {
@@ -24,8 +31,9 @@ export class PokemonService {
     }
   }
 
-  findAll() {
-    return `This action returns all pokemon`;
+  async findAll(paginationDto: PaginatioDto) {
+    const {limit: l = this.defaultLimit, offset: o = 0 } = paginationDto;
+    return await this.pokemonModel.find().limit(l).skip(o).sort({ nro: 1}).select('-__v');
   }
 
   async findOne(id: string) {
